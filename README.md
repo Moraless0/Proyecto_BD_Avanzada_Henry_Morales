@@ -201,7 +201,7 @@ Es muy importante ejecutar los archivos en este orden exacto:
 
 Este proyecto fue un reto considerable pero aprendí mucho más de lo que esperaba. Al principio parecía abrumador con tantos requisitos (20 de cada cosa), pero al final entendí que cada elemento tiene su propósito. Los triggers, eventos y procedimientos hacen que la base de datos sea mucho más inteligente y segura que si solo tuviera tablas y consultas simples.
 
-El resultado es una base de datos funcional que demuestra comprensión profunda de conceptos avanzados de MySQL, manteniendo un nivel académico apropiado para un estudiante que está aprendiendo.
+Mas misericordia a la proxima :'(
 
 
 ## Autor
