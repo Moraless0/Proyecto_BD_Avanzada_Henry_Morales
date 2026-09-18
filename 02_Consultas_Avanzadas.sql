@@ -3,6 +3,8 @@
 
 USE ecommerce_db;
 
+SELECT * FROM ventas;
+
 -- 1. Top 10 Productos Más Vendidos por facturación total
 SELECT 
     p.id_producto,

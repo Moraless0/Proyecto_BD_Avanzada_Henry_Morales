@@ -153,9 +153,9 @@ GRANT SELECT ON ecommerce_db.productos TO 'Visitante';
 -- 5. Concesión de Ejecución de Procedimientos
 -- ----------------------------------------------------
 
--- Permisos de reporteo para Marketing
-GRANT EXECUTE ON PROCEDURE ecommerce_db.sp_GenerarReporteMensualVentas TO 'Gerente_Marketing';
-GRANT EXECUTE ON PROCEDURE ecommerce_db.sp_ObtenerDashboardAdmin TO 'Gerente_Marketing';
+-- Nota: los GRANT EXECUTE sobre sp_GenerarReporteMensualVentas y sp_ObtenerDashboardAdmin
+-- se movieron al final de 07_Procedimientos_Almacenados.sql, porque esos procedimientos
+-- no existen todavia en este punto del orden de ejecucion (04 se corre antes que 07).
 
 -- ----------------------------------------------------
 -- 6. Asignación de Roles a Cuentas y Activación por Defecto

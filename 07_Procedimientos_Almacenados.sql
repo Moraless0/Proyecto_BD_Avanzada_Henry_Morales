@@ -76,12 +76,11 @@ proc_label: BEGIN
             LEAVE proc_label;
         END IF;
 
+        -- El trigger trg_update_stock_after_insert_venta (05_Triggers.sql) descuenta
+        -- el stock automaticamente al insertar la linea, por eso aqui NO se resta stock
+        -- manualmente (antes se restaba dos veces).
         INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio_unitario_congelado)
         VALUES (p_id_venta, v_id_prod, v_cant, v_precio);
-
-        UPDATE productos 
-        SET stock = stock - v_cant 
-        WHERE id_producto = v_id_prod;
 
         SET v_monto_acumulado = v_monto_acumulado + (v_cant * v_precio);
         SET v_i = v_i + 1;
@@ -90,6 +89,14 @@ proc_label: BEGIN
     UPDATE ventas 
     SET total = v_monto_acumulado 
     WHERE id_venta = p_id_venta;
+
+    -- El trigger trg_update_total_gastado_cliente (05_Triggers.sql) solo se dispara con
+    -- INSERT ON ventas, y en ese momento el total todavia era 0.00. Por eso aqui se
+    -- actualiza el acumulado del cliente con el monto real ya calculado.
+    UPDATE clientes
+    SET total_gastado = total_gastado + v_monto_acumulado,
+        fecha_ultima_compra = NOW()
+    WHERE id_cliente = p_id_cliente;
 
     COMMIT;
     SET p_mensaje = 'Venta registrada exitosamente con reserva de inventario.';
@@ -174,7 +181,7 @@ proc_label: BEGIN
     FROM detalle_ventas
     WHERE id_detalle = p_id_detalle;
 
-    IF v_id_detalle IS NULL THEN
+    IF v_id_venta IS NULL THEN
         SET p_id_devolucion = NULL;
         SET p_mensaje = 'Error: La partida de venta especificada no existe.';
         LEAVE proc_label;
@@ -200,16 +207,21 @@ proc_label: BEGIN
     WHERE id_producto = v_id_producto;
 
     IF p_cantidad_devuelta = v_cant_comprada THEN
+        -- Se borra la linea completa: no existe trigger AFTER DELETE en detalle_ventas
+        -- que recalcule el total, asi que aqui SI hay que restarlo manualmente.
         DELETE FROM detalle_ventas WHERE id_detalle = p_id_detalle;
+
+        UPDATE ventas
+        SET total = total - v_monto_reembolso
+        WHERE id_venta = v_id_venta;
     ELSE
+        -- Devolucion parcial: el trigger trg_recalculate_total_venta_on_detalle_change
+        -- (05_Triggers.sql) ya recalcula ventas.total al hacer este UPDATE, por eso
+        -- NO se resta el reembolso de nuevo aqui (antes se restaba dos veces).
         UPDATE detalle_ventas
         SET cantidad = cantidad - p_cantidad_devuelta
         WHERE id_detalle = p_id_detalle;
     END IF;
-
-    UPDATE ventas
-    SET total = total - v_monto_reembolso
-    WHERE id_venta = v_id_venta;
 
     COMMIT;
     SET p_mensaje = CONCAT('Devolución procesada exitosamente. Reembolso: Q', v_monto_reembolso);
@@ -710,6 +722,13 @@ BEGIN
 END //
 
 DELIMITER ;
+
+-- ----------------------------------------------------
+-- Permisos de ejecucion sobre procedimientos (antes estaban en 04_Seguridad.sql,
+-- pero se movieron aqui porque estos procedimientos no existian todavia en ese punto)
+-- ----------------------------------------------------
+GRANT EXECUTE ON PROCEDURE ecommerce_db.sp_GenerarReporteMensualVentas TO 'Gerente_Marketing';
+GRANT EXECUTE ON PROCEDURE ecommerce_db.sp_ObtenerDashboardAdmin TO 'Gerente_Marketing';
 
 -- ============================================================================
 -- NOTAS DE APRENDIZAJE
